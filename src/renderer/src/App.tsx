@@ -15,10 +15,10 @@ export const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (window.electronAPI?.onDeepLinkJoinRoom) {
-      const unsub = window.electronAPI.onDeepLinkJoinRoom((targetRoomId) => {
-        console.log('[App] Received deep link auto-join for room:', targetRoomId);
+      const unsub = window.electronAPI.onDeepLinkJoinRoom(({ roomId, serverUrl }) => {
+        console.log('[App] Received deep link auto-join for room:', roomId, 'Server:', serverUrl);
         setActivePage('viewer');
-        joinStream(targetRoomId);
+        joinStream(roomId, undefined, undefined, serverUrl);
       });
       return unsub;
     }

@@ -8,7 +8,6 @@ import { IPC_CHANNELS } from '../shared/ipc';
 
 let mainWindow: BrowserWindow | null = null;
 
-// Register custom protocol handler for strem://
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
     app.setAsDefaultProtocolClient('strem', process.execPath, [resolve(process.argv[1])]);
@@ -17,7 +16,6 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient('strem');
 }
 
-// Single instance lock to catch protocol launches when app is already open
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -28,32 +26,50 @@ if (!gotTheLock) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
 
-      // Find strem:// URL in command line arguments
       const urlArg = commandLine.find((arg) => arg.startsWith('strem://'));
       if (urlArg) {
-        const roomId = extractRoomIdFromUrl(urlArg);
-        if (roomId) {
-          console.log('[Main] Protocol link clicked while running! Joining room:', roomId);
-          mainWindow.webContents.send(IPC_CHANNELS.DEEP_LINK_JOIN_ROOM, roomId);
+        const parsed = parseDeepLinkUrl(urlArg);
+        if (parsed.roomId) {
+          console.log('[Main] Protocol link clicked! Room:', parsed.roomId, 'Server:', parsed.serverUrl);
+          mainWindow.webContents.send(IPC_CHANNELS.DEEP_LINK_JOIN_ROOM, parsed);
         }
       }
     }
   });
 }
 
-function extractRoomIdFromUrl(rawUrl: string): string | null {
+export interface ParsedDeepLink {
+  roomId: string;
+  serverUrl?: string;
+}
+
+function parseDeepLinkUrl(rawUrl: string): ParsedDeepLink {
   try {
     const cleaned = rawUrl.trim();
+    let pathPart = cleaned;
     if (cleaned.startsWith('strem://join/')) {
-      return cleaned.replace('strem://join/', '').split('?')[0].split('/')[0].toLowerCase();
+      pathPart = cleaned.replace('strem://join/', '');
+    } else if (cleaned.startsWith('strem://')) {
+      pathPart = cleaned.replace('strem://', '');
     }
-    if (cleaned.startsWith('strem://')) {
-      return cleaned.replace('strem://', '').split('?')[0].split('/')[0].toLowerCase();
+
+    const [roomAndPath, queryString] = pathPart.split('?');
+    const roomId = roomAndPath.split('/')[0].toLowerCase();
+
+    let serverUrl: string | undefined = undefined;
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      const serverParam = params.get('server');
+      if (serverParam) {
+        serverUrl = decodeURIComponent(serverParam);
+      }
     }
+
+    return { roomId, serverUrl };
   } catch (err) {
     console.error('[Main] Failed to parse protocol URL:', err);
+    return { roomId: '' };
   }
-  return null;
 }
 
 function getPreloadPath(): string {
@@ -88,14 +104,13 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
 
-    // Check cold launch command line arguments for strem:// URL
     const urlArg = process.argv.find((arg) => arg.startsWith('strem://'));
     if (urlArg) {
-      const roomId = extractRoomIdFromUrl(urlArg);
-      if (roomId) {
-        console.log('[Main] Cold launch with protocol link! Joining room:', roomId);
+      const parsed = parseDeepLinkUrl(urlArg);
+      if (parsed.roomId) {
+        console.log('[Main] Cold launch protocol link! Room:', parsed.roomId, 'Server:', parsed.serverUrl);
         setTimeout(() => {
-          mainWindow?.webContents.send(IPC_CHANNELS.DEEP_LINK_JOIN_ROOM, roomId);
+          mainWindow?.webContents.send(IPC_CHANNELS.DEEP_LINK_JOIN_ROOM, parsed);
         }, 1000);
       }
     }

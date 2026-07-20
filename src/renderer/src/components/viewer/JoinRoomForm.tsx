@@ -4,15 +4,22 @@ import { useStream } from '../../context/StreamContext';
 export const JoinRoomForm: React.FC = () => {
   const { joinStream, signalingState, errorMessage } = useStream();
   const [roomIdInput, setRoomIdInput] = useState('');
+  const [serverUrlInput, setServerUrlInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [peerNameInput, setPeerNameInput] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const isConnecting = signalingState === 'connecting';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (roomIdInput.trim()) {
-      joinStream(roomIdInput.trim(), passwordInput || undefined, peerNameInput || undefined);
+      joinStream(
+        roomIdInput.trim(),
+        passwordInput || undefined,
+        peerNameInput || undefined,
+        serverUrlInput.trim() || undefined
+      );
     }
   };
 
@@ -67,17 +74,57 @@ export const JoinRoomForm: React.FC = () => {
         </div>
 
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-            YOUR DISPLAY NAME (OPTIONAL)
-          </label>
-          <input
-            type="text"
-            placeholder="Viewer"
-            className="input-field"
-            value={peerNameInput}
-            onChange={(e) => setPeerNameInput(e.target.value)}
-          />
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--accent-primary)',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: 0
+            }}
+          >
+            {showAdvanced ? '▲ Hide Connection Details' : '▼ Broadcaster IP / Custom Signaling Server'}
+          </button>
         </div>
+
+        {showAdvanced && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', background: 'var(--bg-panel)', borderRadius: '8px' }}>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                BROADCASTER IP / SIGNALING SERVER URL
+              </label>
+              <input
+                type="text"
+                placeholder="ws://192.168.1.50:8080 or ws://YOUR_PUBLIC_IP:8080"
+                className="input-field"
+                value={serverUrlInput}
+                onChange={(e) => setServerUrlInput(e.target.value)}
+                style={{ fontSize: '12px', fontFamily: 'var(--font-mono)' }}
+              />
+              <span style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
+                Leave blank if clicking a 1-click Discord link, or enter broadcaster's IP/Host.
+              </span>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                YOUR DISPLAY NAME (OPTIONAL)
+              </label>
+              <input
+                type="text"
+                placeholder="Viewer"
+                className="input-field"
+                value={peerNameInput}
+                onChange={(e) => setPeerNameInput(e.target.value)}
+                style={{ fontSize: '12px' }}
+              />
+            </div>
+          </div>
+        )}
 
         {errorMessage && (
           <div

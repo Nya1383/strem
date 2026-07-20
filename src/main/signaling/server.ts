@@ -7,6 +7,7 @@ import type {
   ChatMessage
 } from '../../shared/signaling';
 import type { SignalingServerStatus } from '../../shared/ipc';
+import { getLocalIpAddress } from '../services/network';
 
 const nanoidRoom = customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', 6);
 const nanoidPeer = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 10);
@@ -48,7 +49,9 @@ export class SignalingServer {
           this.currentPort = port;
           this.wss = wss;
           this.startHeartbeatMonitor();
-          console.log(`[SignalingServer] Listening on ws://localhost:${port}`);
+          const lanIp = getLocalIpAddress();
+          console.log(`[SignalingServer] Listening on 0.0.0.0:${port}`);
+          console.log(`[SignalingServer] Local LAN URL: ws://${lanIp}:${port}`);
           resolve(port);
         });
 
@@ -196,14 +199,17 @@ export class SignalingServer {
     this.rooms.set(roomId, room);
     this.clients.set(ws, peer);
 
+    const lanIp = getLocalIpAddress();
+    const joinUrl = `strem://join/${roomId}?server=ws://${lanIp}:${this.currentPort}`;
+
     this.send(ws, {
       type: 'room-created',
       roomId,
       peerId,
-      joinUrl: `strem://${roomId}`
+      joinUrl
     });
 
-    console.log(`[SignalingServer] Room created: ${roomId} by ${peerId}`);
+    console.log(`[SignalingServer] Room created: ${roomId} by ${peerId} (Join URL: ${joinUrl})`);
   }
 
   private handleJoinRoom(

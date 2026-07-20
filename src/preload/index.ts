@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS, type WindowControlAction, type DiscordNotificationPayload } from '../shared/ipc';
+import type { DeepLinkPayload } from '../types/env';
 
 const api = {
   getDesktopSources: () => ipcRenderer.invoke(IPC_CHANNELS.DESKTOP_CAPTURER_GET_SOURCES),
@@ -18,8 +19,8 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.DISCORD_TEST_WEBHOOK, webhookUrl),
   testDiscordBotCredentials: (botToken: string, channelId: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISCORD_TEST_BOT_CREDENTIALS, botToken, channelId),
-  onDeepLinkJoinRoom: (callback: (roomId: string) => void) => {
-    const handler = (_event: any, roomId: string) => callback(roomId);
+  onDeepLinkJoinRoom: (callback: (data: DeepLinkPayload) => void) => {
+    const handler = (_event: any, data: DeepLinkPayload) => callback(data);
     ipcRenderer.on(IPC_CHANNELS.DEEP_LINK_JOIN_ROOM, handler);
     return () => {
       ipcRenderer.removeListener(IPC_CHANNELS.DEEP_LINK_JOIN_ROOM, handler);

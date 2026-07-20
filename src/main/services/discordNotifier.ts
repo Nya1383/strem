@@ -1,9 +1,12 @@
 import type { DiscordNotificationPayload } from '../../shared/ipc';
+import { getLocalIpAddress } from './network';
 
 function buildDiscordMessageBody(payload: DiscordNotificationPayload) {
   const isPasswordProtected = Boolean(payload.password);
   const qualityStr = `${payload.resolution || '1080p'} @ ${payload.frameRate || 60} FPS`;
-  const joinProtocolUrl = `strem://join/${payload.roomId}`;
+  const lanIp = getLocalIpAddress();
+  const serverUrl = `ws://${lanIp}:8080`;
+  const joinProtocolUrl = `strem://join/${payload.roomId}?server=${encodeURIComponent(serverUrl)}`;
 
   const embed = {
     title: '🔴 STREM Live Broadcast Started!',
@@ -18,6 +21,11 @@ function buildDiscordMessageBody(payload: DiscordNotificationPayload) {
       {
         name: '🔑 Room ID',
         value: `\`${payload.roomId}\``,
+        inline: true
+      },
+      {
+        name: '🌐 Signaling Server IP',
+        value: `\`${serverUrl}\``,
         inline: true
       },
       {
@@ -69,7 +77,6 @@ async function sendViaBotApi(
   channelId: string,
   bodyObj: any
 ): Promise<{ success: boolean; error?: string }> {
-  // Strip "Bot " prefix if user included it in token
   const token = botToken.startsWith('Bot ') ? botToken.substring(4).trim() : botToken.trim();
   const url = `https://discord.com/api/v10/channels/${channelId}/messages`;
 

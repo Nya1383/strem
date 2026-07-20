@@ -1,6 +1,11 @@
 /// <reference types="vite/client" />
 import type { DesktopSource, SignalingServerStatus, WindowControlAction, DiscordNotificationPayload } from '../shared/ipc';
 
+export interface DeepLinkPayload {
+  roomId: string;
+  serverUrl?: string;
+}
+
 export interface ElectronAPI {
   getDesktopSources: () => Promise<DesktopSource[]>;
   startSignalingServer: (port?: number) => Promise<SignalingServerStatus>;
@@ -22,7 +27,7 @@ export interface ElectronAPI {
     botToken: string,
     channelId: string
   ) => Promise<{ success: boolean; error?: string }>;
-  onDeepLinkJoinRoom: (callback: (roomId: string) => void) => () => void;
+  onDeepLinkJoinRoom: (callback: (data: DeepLinkPayload) => void) => () => void;
 }
 
 declare global {

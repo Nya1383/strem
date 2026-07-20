@@ -28,7 +28,7 @@ interface StreamContextType {
   setSelectedSource: (source: DesktopSource | null) => void;
   startBroadcasting: (password?: string, peerName?: string) => Promise<void>;
   stopBroadcasting: () => void;
-  joinStream: (roomId: string, password?: string, peerName?: string) => Promise<void>;
+  joinStream: (roomId: string, password?: string, peerName?: string, customServerUrl?: string) => Promise<void>;
   leaveStream: () => void;
   toggleMicMute: () => void;
   toggleSystemAudioMute: () => void;
@@ -64,12 +64,10 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const statsCollectorRef = useRef<StatsCollector>(new StatsCollector());
   const recorderRef = useRef<StreamRecorder>(new StreamRecorder());
 
-  // Keep signaling URL updated from settings
   useEffect(() => {
     signalingClientRef.current.setServerUrl(settings.signalingUrl);
   }, [settings.signalingUrl]);
 
-  // Subscribe to signaling client state
   useEffect(() => {
     const client = signalingClientRef.current;
     const unsubState = client.subscribeState(setSignalingState);
@@ -80,7 +78,6 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           setRoomId(msg.roomId);
           setRole('broadcaster');
 
-          // Auto-send Discord Live Stream Alert via Bot or Webhook
           if (settings.enableDiscordNotifications && window.electronAPI?.sendDiscordNotification) {
             const hasCredentials =
               settings.discordIntegrationType === 'bot'
@@ -198,7 +195,6 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
   }, [role, selectedSource, settings]);
 
-  // Source selection stream preview
   useEffect(() => {
     let activeStream: MediaStream | null = null;
     let isMounted = true;
@@ -296,7 +292,12 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     cleanupStream();
   };
 
-  const joinStream = async (targetRoomId: string, password?: string, peerName?: string) => {
+  const joinStream = async (
+    targetRoomId: string,
+    password?: string,
+    peerName?: string,
+    customServerUrl?: string
+  ) => {
     if (!targetRoomId.trim()) {
       setErrorMessage('Please enter a valid Stream Room ID');
       return;
@@ -304,6 +305,13 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     setErrorMessage(null);
     clearMessages();
+
+    if (customServerUrl) {
+      console.log('[StreamContext] Connecting to custom signaling server URL:', customServerUrl);
+      signalingClientRef.current.setServerUrl(customServerUrl);
+    } else {
+      signalingClientRef.current.setServerUrl(settings.signalingUrl);
+    }
 
     viewerManagerRef.current = new ViewerPeerManager(
       (broadcasterPeerId, candidate) => {
