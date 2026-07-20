@@ -91,6 +91,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                   botToken: settings.discordBotToken.trim(),
                   channelId: settings.discordChannelId.trim(),
                   webhookUrl: settings.discordWebhookUrl.trim(),
+                  signalingUrl: settings.signalingUrl.trim(),
                   roomId: msg.roomId,
                   sourceName: selectedSource?.name,
                   resolution: settings.resolution,

@@ -9,6 +9,18 @@ import type {
 type SignalingEventListener = (msg: ServerMessage) => void;
 type StateChangeListener = (state: SignalingState) => void;
 
+export function formatWebSocketUrl(rawUrl: string): string {
+  let formatted = rawUrl.trim();
+  if (formatted.startsWith('https://')) {
+    formatted = formatted.replace('https://', 'wss://');
+  } else if (formatted.startsWith('http://')) {
+    formatted = formatted.replace('http://', 'ws://');
+  } else if (!formatted.startsWith('ws://') && !formatted.startsWith('wss://')) {
+    formatted = `ws://${formatted}`;
+  }
+  return formatted;
+}
+
 export class SignalingClient {
   private ws: WebSocket | null = null;
   private serverUrl = 'ws://localhost:8080';
@@ -21,11 +33,11 @@ export class SignalingClient {
   private autoReconnect = true;
 
   constructor(serverUrl = 'ws://localhost:8080') {
-    this.serverUrl = serverUrl;
+    this.setServerUrl(serverUrl);
   }
 
   public setServerUrl(url: string): void {
-    this.serverUrl = url;
+    this.serverUrl = formatWebSocketUrl(url);
   }
 
   public getState(): SignalingState {
@@ -42,6 +54,7 @@ export class SignalingClient {
 
     return new Promise((resolve, reject) => {
       try {
+        console.log(`[SignalingClient] Connecting to WebSocket URL: ${this.serverUrl}`);
         const ws = new WebSocket(this.serverUrl);
         this.ws = ws;
 

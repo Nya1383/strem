@@ -50,6 +50,7 @@ export interface DiscordNotificationPayload {
   webhookUrl?: string;
   botToken?: string;
   channelId?: string;
+  signalingUrl?: string;
   roomId: string;
   password?: string;
   sourceName?: string;

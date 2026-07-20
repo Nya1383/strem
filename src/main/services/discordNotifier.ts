@@ -4,8 +4,13 @@ import { getLocalIpAddress } from './network';
 function buildDiscordMessageBody(payload: DiscordNotificationPayload) {
   const isPasswordProtected = Boolean(payload.password);
   const qualityStr = `${payload.resolution || '1080p'} @ ${payload.frameRate || 60} FPS`;
-  const lanIp = getLocalIpAddress();
-  const serverUrl = `ws://${lanIp}:8080`;
+
+  let serverUrl = payload.signalingUrl?.trim();
+  if (!serverUrl || serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
+    const lanIp = getLocalIpAddress();
+    serverUrl = `ws://${lanIp}:8080`;
+  }
+
   const joinProtocolUrl = `strem://join/${payload.roomId}?server=${encodeURIComponent(serverUrl)}`;
 
   const embed = {
@@ -24,7 +29,7 @@ function buildDiscordMessageBody(payload: DiscordNotificationPayload) {
         inline: true
       },
       {
-        name: '🌐 Signaling Server IP',
+        name: '🌐 Signaling Host',
         value: `\`${serverUrl}\``,
         inline: true
       },
