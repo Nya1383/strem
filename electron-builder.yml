@@ -1,0 +1,47 @@
+appId: com.strem.app
+productName: STREM
+copyright: Copyright © 2024 STREM
+
+directories:
+  output: dist
+  buildResources: resources
+
+# Files included in the packaged app. electron-vite emits to `out/`.
+files:
+  - out/**/*
+  - package.json
+  - '!**/.vscode/*'
+  - '!**/*.map'
+  - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'
+
+asarUnpack:
+  - '**/*.{node,dll}'
+
+# OS-specific targets. Windows is the primary target (matches dev machine);
+# macOS and Linux configs are ready for cross-builds.
+win:
+  target:
+    - nsis
+    - zip
+  artifactName: STREM-${version}-${arch}.${ext}
+
+mac:
+  target:
+    - dmg
+  category: public.app-category.utilities
+  artifactName: STREM-${version}-${arch}.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: AudioVideo
+  artifactName: STREM-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  shortcutName: STREM
+
+publish: null
